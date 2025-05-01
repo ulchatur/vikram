@@ -1,0 +1,34 @@
+name: Build and Upload Python Package with Poetry on JFrog Repo
+on:
+  workflow_dispatch:
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies with Poetry
+        run: poetry install --no-interaction
+
+      - name: Build wheel using Poetry
+        run: poetry build
+
+      - name: Upload to JFrog Artifactory
+        env:
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: |
+          pip install twine
+          twine upload --repository-url ${{ secrets.JFROG_REPO_URL }} dist/*

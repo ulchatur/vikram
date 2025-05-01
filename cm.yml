@@ -1,0 +1,58 @@
+---
+- name: Provision and configure web server stack
+  hosts: webservers
+  become: true
+
+  vars:
+    nginx_port: 80
+
+  pre_tasks:
+    - name: Update apt cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install EPEL repo (RedHat/CentOS)
+      yum:
+        name: epel-release
+        state: present
+      when: ansible_os_family == "RedHat"
+
+  tasks:
+    - name: Install NGINX
+      package:
+        name: nginx
+        state: present
+
+    - name: Start and enable NGINX
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Allow HTTP through UFW (Debian/Ubuntu)
+      ufw:
+        rule: allow
+        name: "Nginx Full"
+      when: ansible_os_family == "Debian"
+
+    - name: Open HTTP port on firewalld (RedHat/CentOS)
+      firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure firewalld is running (RedHat/CentOS)
+      service:
+        name: firewalld
+        state: started
+        enabled: true
+      when: ansible_os_family == "RedHat"
+
+  post_tasks:
+    - name: Confirm web server setup
+      debug:
+        msg: "Web server is up at http://{{ ansible_host }}:{{ nginx_port }}"
+

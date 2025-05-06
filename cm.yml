@@ -1,22 +1,26 @@
 ---
 - name: Provision and configure web server stack
-  hosts: webservers
+  hosts: web
   become: true
 
   vars:
     nginx_port: 80
 
   pre_tasks:
+    - name: Show target OS for debugging
+      debug:
+        msg: "{{ ansible_distribution }} {{ ansible_distribution_version }} ({{ ansible_os_family }})"
+
     - name: Update apt cache (Debian/Ubuntu)
       apt:
         update_cache: yes
       when: ansible_os_family == "Debian"
 
-    - name: Install EPEL repo (RedHat/CentOS)
+    - name: Install EPEL repo (RedHat/CentOS excluding Amazon Linux)
       yum:
         name: epel-release
         state: present
-      when: ansible_os_family == "RedHat"
+      when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon"
 
   tasks:
     - name: Install NGINX
@@ -42,14 +46,14 @@
         permanent: true
         state: enabled
         immediate: yes
-      when: ansible_os_family == "RedHat"
+      when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon"
 
     - name: Ensure firewalld is running (RedHat/CentOS)
       service:
         name: firewalld
         state: started
         enabled: true
-      when: ansible_os_family == "RedHat"
+      when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon"
 
   post_tasks:
     - name: Confirm web server setup

@@ -1,0 +1,29 @@
+---
+- name: Install Git and Docker
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install Git and Docker on Debian/Ubuntu
+      apt:
+        name:
+          - git
+          - docker.io
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Git and Docker on RedHat/Amazon
+      yum:
+        name:
+          - git
+          - docker
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
